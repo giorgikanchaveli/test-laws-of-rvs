@@ -2,9 +2,12 @@ using ExactOptimalTransport
 using Tulip
 using StatsBase
 using Plots
+using IPMeasures:mmd, GaussianKernel
+using KernelFunctions
 
 
 include("distributions.jl")
+
 
 compute_cost = function(atoms1::Vector{Float64}, atoms2::Vector{Float64}, p::Int)
     # builds cost matrix for atoms. Returns a matrix c of size length(atoms1)*length(atoms2) 
@@ -19,24 +22,32 @@ compute_cost = function(atoms1::Vector{Float64}, atoms2::Vector{Float64}, p::Int
     return c
 end
 
-wasserstein_distance = function(emp_dist_1, emp_dist_2, p::Int)
+compute_distance = function(dist::String, emp_dist_1, emp_dist_2, p::Int)
     # this function is used for empirical distributions
-    # returns wasserstein distance and optimal coupling given atoms and associated weights
+    # if dist == wass returns wasserstein distance and optimal coupling given atoms and associated weights
+    # if dist == mmd returns mmd distance
     # p is power for the associated p-euclidian distance
 
     #emp_dist_i: function s.t. when we call it returns unique atoms and weights associated to it
     
     # simulate emp distributions
-    atoms_1, weights_1 = emp_dist_1()
-    atoms_2, weights_2 = emp_dist_2()
-    #compute disatnce
-    cost = compute_cost(atoms_1,atoms_2,p)
-    gamma = ExactOptimalTransport.emd(weights_1, weights_2, cost, Tulip.Optimizer())
+    atoms_1 = emp_dist_1()
+    atoms_2 = emp_dist_2()
 
-    return sum(cost.*gamma), gamma
+    #compute disatnce
+    if dist == "wass"
+        atoms_1,weights_1 = convert_measure(atoms_1)
+        atoms_2,weights_2 = convert_measure(atoms_2)
+        cost = compute_cost(atoms_1,atoms_2,p)
+        gamma = ExactOptimalTransport.emd(weights_1, weights_2, cost, Tulip.Optimizer())
+        return sum(cost.*gamma)
+    elseif dist == "mmd"
+        atoms_1,atoms_2 = reshape(atoms_1,(1,length(atoms_1))), reshape(atoms_2,(1,length(atoms_2)))#mmd requries
+        return mmd(GaussianKernel(1.0),atoms_1,atoms_2)
+    end
 end
 
-wasserstein_distances = function(emp_dist_1, emp_dist_2, S::Int, p::Int)
+compute_distances = function(dist::String, emp_dist_1, emp_dist_2, S::Int, p::Int)
     # this function is used for empirical distributions
     # returns S wasserstein distances and optimal coupling given atoms and associated weights
     # S: number of times we want to compute W.D.
@@ -45,13 +56,7 @@ wasserstein_distances = function(emp_dist_1, emp_dist_2, S::Int, p::Int)
     #emp_dist_i: function s.t. when we call it returns unique atoms and weights associated to it
     d = []
     for s in 1:S
-        # simulate emp Distributions
-        atoms_1, weights_1 = emp_dist_1()
-        atoms_2, weights_2 = emp_dist_2()
-        #compute distance
-        cost = compute_cost(atoms_1,atoms_2,p)
-        gamma = ExactOptimalTransport.emd(weights_1, weights_2, cost, Tulip.Optimizer())
-        push!(d, sum(cost.*gamma))
+        push!(d,compute_distance(dist, emp_dist_1, emp_dist_2, p))
     end
     return d
 end

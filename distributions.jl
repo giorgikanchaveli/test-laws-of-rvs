@@ -40,7 +40,7 @@ emp_distr = function(pm::Discr, n::Int)
     # simulation
     dist = Categorical(pm.weights)
     x = pm.atoms[rand(dist,n)]
-    return convert_measure(x)
+    return x
 end
 
 
