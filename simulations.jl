@@ -12,41 +12,45 @@ quan = function(arr,α)
     end
 end
 
-function convergence_dist_wass(pm_1::PM, pm_2::PM, n_rv::Vector{Int}, S::Int)
+function convergence_dist(dist::String, pm_1::PM, pm_2::PM, n_rv::Vector{Int}, S::Int)
     # for each n_rv computes empirical distance between two p.m
 
-    # pm_i: discrete probability measures, i.e. atoms and associated weights
+    # dist: distance used for prob. measures
+    # pm_i: probability measure
     # n_rv: vector of number of r.v. you want to simulate from each prob. measure
     # S: number of times to compute distance
 
     distances = []
     for n in n_rv
-        d = compute_distances("wass",() -> emp_distr(pm_1,n),()->emp_distr(pm_2,n), S, 1)
+        d = compute_distances(dist,() -> emp_distr(pm_1,n),()->emp_distr(pm_2,n), S, 1)
         push!(distances, mean(d))
     end
     return distances
 end
 
-function emp_threshold_wass(pm_1::Discr,pm_2::Discr, n_rv::Int,S::Int)
-    # pm_i: discrete probability measures, i.e. atoms and associated weights
+function emp_threshold(dist::String, pm_1::PM,pm_2::PM, n_rv::Int,S::Int)
+    # dist: distance used for prob. measures
+    # pm_i: probability measure
     # n_rv: number of r.v. you want to simulate from each prob. measure
     # S: number of times to compute distance
 
     # computes empirical distances between pm_1 and om_2 S times and returns
     # 95% quantile
-    d = compute_distances("wass",() -> emp_distr(pm_1,n_rv),()->emp_distr(pm_2,n_rv), S, 1)
+    d = compute_distances(dist,() -> emp_distr(pm_1,n_rv),()->emp_distr(pm_2,n_rv), S, 1)
     return quantile(d, 0.95)
 end
 
-function emp_thresholds_wass(pm_1::Discr, pm_2::Discr, n_rv::Vector{Int},S::Int)
+function emp_thresholds(dist::String, pm_1::PM, pm_2::PM, n_rv::Vector{Int},S::Int)
     # for each n_rv computes empirical tnreshold which is 95% quantile
     # of distances between pm_1 and pm_2
-    # pm_i: discrete probability measures, i.e. atoms and associated weights
+    
+    # dist: distance used for prob. measures 
+    # pm_i: probability measure
     # n_rv: vector of number of r.v. you want to simulate from each prob. measure
     # S: number of times to compute distance
     c = []
     for n in n_rv
-        push!(c, emp_threshold_wass(pm_1, pm_2, n, S))
+        push!(c, emp_threshold(dist, pm_1, pm_2, n, S))
     end
     return c
 end
@@ -109,18 +113,19 @@ S = 10
 # emp_2 = ()->emp_distr(pm_2,10)
 # emp_3 = ()->emp_distr(pm_3,10)
 n_rv = [10,100,100]
- thresholds_same = emp_thresholds_wass(pm_discr_1,pm_discr_2,n_rv,S)
- thresholds_diff = emp_thresholds_wass(pm_discr_1,pm_discr_3,n_rv,S)
+dist="mmd"
+thresholds_same = emp_thresholds(dist,pm_discr_1,pm_discr_2,n_rv,S)
+thresholds_diff = emp_thresholds(dist,pm_discr_1,pm_discr_3,n_rv,S)
 # print(thresholds_same)
 # print(thresholds_diff)
 
-converg_discr = convergence_dist_wass(pm_discr_1,pm_discr_2,n_rv,10)
-converg_gamma = convergence_dist_wass(pm_gam_1,pm_gam_2,n_rv,10)
-converg_unif = convergence_dist_wass(pm_unif_1,pm_unif_2,n_rv,10)
+converg_discr = convergence_dist(dist,pm_discr_1,pm_discr_2,n_rv,10)
+converg_gamma = convergence_dist(dist,pm_gam_1,pm_gam_2,n_rv,10)
+converg_unif = convergence_dist(dist,pm_unif_1,pm_unif_2,n_rv,10)
 
 # hyp testing:
 
- distances, n_rejected, c= hyp_test("wass",pm_unif_1,pm_unif_2,100,2.0,0.05,10)
+ distances, n_rejected, c= hyp_test(dist,pm_unif_1,pm_unif_2,100,2.0,0.05,10)
 
 # n_rejected
 # distances
