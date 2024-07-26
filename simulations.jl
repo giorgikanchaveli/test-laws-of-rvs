@@ -56,18 +56,24 @@ function emp_thresholds(dist::String, pm_1::PM, pm_2::PM, n_rv::Vector{Int},S::I
 end
 
 
-function threshold_wass(n::Int, θ::Float64, k = 2)
+function threshold(dist::String, n::Int, θ::Float64, k = 2)
+    # dist: distance used for prob measures
     # n: number of sampled random variables
     # θ: probability level for hypothesis testing
     # k: diameter of space
 
     # returns the optimal threshold for hypothesis tessting
-
-    c1 = 512*k*sqrt(log(2))/sqrt(n)
-    c2 = sqrt((4*(k^2)*log(1/θ))/n)
-    c3 = (8*k*log(1/θ))/(3*n)
-    c4 = (64*sqrt(2*(k^2)*sqrt(log(2))log(1/θ)))/n^0.75
-    return c1+c2+c3+c4
+    if dist=="wass"
+        c1 = 512*k*sqrt(log(2))/sqrt(n)
+        c2 = sqrt((4*(k^2)*log(1/θ))/n)
+        c3 = (8*k*log(1/θ))/(3*n)
+        c4 = (64*sqrt(2*(k^2)*sqrt(log(2))log(1/θ)))/n^0.75 
+        return c1+c2+c3+c4
+    elseif dist=="mmd"
+        return sqrt(2/n)*(1+sqrt(2*log(1/θ)))
+    end
+    print("Distance must be either wass or mmd")
+    return "Error"
 end
 
 function hyp_test(dist::String, pm_1::PM, pm_2::PM, n_rv::Int, k::Float64, θ::Float64, S::Int)
@@ -81,11 +87,7 @@ function hyp_test(dist::String, pm_1::PM, pm_2::PM, n_rv::Int, k::Float64, θ::F
 
     n_rejected = 0
     distances = compute_distances(dist,() -> emp_distr(pm_1,n_rv),()->emp_distr(pm_2,n_rv), S, 1)
-    if dist=="wass"
-        c = threshold_wass(n_rv, θ, k)
-    else
-        c = threshold_wass(n_rv,θ,k)  # needs to be defined
-    end
+    c = threshold(dist,n_rv,θ,k)
 
     for s in 1:S
         if distances[s] > c
@@ -112,7 +114,7 @@ S = 10
 # emp_1 = ()->emp_distr(pm_1,10)
 # emp_2 = ()->emp_distr(pm_2,10)
 # emp_3 = ()->emp_distr(pm_3,10)
-n_rv = [10,100,100]
+n_rv = [10,100,100,200,300]
 dist="mmd"
 thresholds_same = emp_thresholds(dist,pm_discr_1,pm_discr_2,n_rv,S)
 thresholds_diff = emp_thresholds(dist,pm_discr_1,pm_discr_3,n_rv,S)
@@ -124,13 +126,9 @@ converg_gamma = convergence_dist(dist,pm_gam_1,pm_gam_2,n_rv,10)
 converg_unif = convergence_dist(dist,pm_unif_1,pm_unif_2,n_rv,10)
 
 # hyp testing:
-
- distances, n_rejected, c= hyp_test(dist,pm_unif_1,pm_unif_2,100,2.0,0.05,10)
+start_time = time()
+distances, n_rejected, c= hyp_test("mmd",pm_discr_1,pm_discr_2,200,2.0,0.05,3)
+println("elapsed $(time()-start_time)")
 
 # n_rejected
 # distances
-
-
-
-
-
