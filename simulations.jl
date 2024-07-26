@@ -12,7 +12,7 @@ quan = function(arr,α)
     end
 end
 
-convergence_dist_wass = function(pm_1::Discr, pm_2::Discr, n_rv::Vector{Int}, S::Int)
+function convergence_dist_wass(pm_1::PM, pm_2::PM, n_rv::Vector{Int}, S::Int)
     # for each n_rv computes empirical distance between two p.m
 
     # pm_i: discrete probability measures, i.e. atoms and associated weights
@@ -27,7 +27,7 @@ convergence_dist_wass = function(pm_1::Discr, pm_2::Discr, n_rv::Vector{Int}, S:
     return distances
 end
 
-emp_threshold_wass = function(pm_1::Discr,pm_2::Discr, n_rv::Int,S::Int)
+function emp_threshold_wass(pm_1::Discr,pm_2::Discr, n_rv::Int,S::Int)
     # pm_i: discrete probability measures, i.e. atoms and associated weights
     # n_rv: number of r.v. you want to simulate from each prob. measure
     # S: number of times to compute distance
@@ -38,7 +38,7 @@ emp_threshold_wass = function(pm_1::Discr,pm_2::Discr, n_rv::Int,S::Int)
     return quantile(d, 0.95)
 end
 
-emp_thresholds_wass = function(pm_1::Discr, pm_2::Discr, n_rv::Vector{Int},S::Int)
+function emp_thresholds_wass(pm_1::Discr, pm_2::Discr, n_rv::Vector{Int},S::Int)
     # for each n_rv computes empirical tnreshold which is 95% quantile
     # of distances between pm_1 and pm_2
     # pm_i: discrete probability measures, i.e. atoms and associated weights
@@ -52,7 +52,7 @@ emp_thresholds_wass = function(pm_1::Discr, pm_2::Discr, n_rv::Vector{Int},S::In
 end
 
 
-threshold_wass = function(n::Int, θ::Float64, k = 2)
+function threshold_wass(n::Int, θ::Float64, k = 2)
     # n: number of sampled random variables
     # θ: probability level for hypothesis testing
     # k: diameter of space
@@ -66,7 +66,7 @@ threshold_wass = function(n::Int, θ::Float64, k = 2)
     return c1+c2+c3+c4
 end
 
-hyp_test = function(dist::String, pm_1::Discr, pm_2::Discr, n_rv::Int, k::Float64, θ::Float64, S::Int)
+function hyp_test(dist::String, pm_1::PM, pm_2::PM, n_rv::Int, k::Float64, θ::Float64, S::Int)
     # S times performs hypothesis testing for two same/diff empirical distributions
 
     # pm_i: discrete probability measures, i.e. atoms and associated weights
@@ -93,26 +93,37 @@ end
 
 
 
-pm_1 = Discr(10)
-pm_2 = Discr(10)
-pm_3 = copy(pm_1)
+pm_discr_1 = Discr(10)
+pm_discr_2= Discr(10)
+pm_discr_3 = copy(pm_discr_1)
+
+pm_gam_1 = Gammarv(1.0,2.0,5)
+pm_gam_2 = Gammarv(2.0,4.0,5)
+pm_gam_3 = Gammarv(1.0,2.0,5)
+
+pm_unif_1 = Uniformrv(0.0,1.0)
+pm_unif_2 = Uniformrv(0.0,1.0)
+S = 10
+
 # emp_1 = ()->emp_distr(pm_1,10)
 # emp_2 = ()->emp_distr(pm_2,10)
 # emp_3 = ()->emp_distr(pm_3,10)
-n_rv = [10,100,1000,10000,20000,30000,100000,1000000]
-S = 10
-thresholds_same = emp_thresholds_wass(pm_1,pm_2,n_rv,S)
-thresholds_diff = emp_thresholds_wass(pm_1,pm_3,n_rv,S)
-print(thresholds_same)
-print(thresholds_diff)
+n_rv = [10,100,100]
+ thresholds_same = emp_thresholds_wass(pm_discr_1,pm_discr_2,n_rv,S)
+ thresholds_diff = emp_thresholds_wass(pm_discr_1,pm_discr_3,n_rv,S)
+# print(thresholds_same)
+# print(thresholds_diff)
 
-#convergence_dist_wass(pm_1,pm_2,n_rv,S)
+converg_discr = convergence_dist_wass(pm_discr_1,pm_discr_2,n_rv,10)
+converg_gamma = convergence_dist_wass(pm_gam_1,pm_gam_2,n_rv,10)
+converg_unif = convergence_dist_wass(pm_unif_1,pm_unif_2,n_rv,10)
+
 # hyp testing:
 
-distances, n_rejected, c= hyp_test("wass",pm_1,pm_2,100,2.0,0.05,10)
+ distances, n_rejected, c= hyp_test("wass",pm_unif_1,pm_unif_2,100,2.0,0.05,10)
 
-n_rejected
-distances
+# n_rejected
+# distances
 
 
 

@@ -22,7 +22,7 @@ compute_cost = function(atoms1::Vector{Float64}, atoms2::Vector{Float64}, p::Int
     return c
 end
 
-compute_distance = function(dist::String, emp_dist_1, emp_dist_2, p::Int)
+compute_distance = function(dist::String, emp_dist_1::Function, emp_dist_2::Function, p::Int)
     # this function is used for empirical distributions
     # if dist == wass returns wasserstein distance and optimal coupling given atoms and associated weights
     # if dist == mmd returns mmd distance
@@ -47,7 +47,7 @@ compute_distance = function(dist::String, emp_dist_1, emp_dist_2, p::Int)
     end
 end
 
-compute_distances = function(dist::String, emp_dist_1, emp_dist_2, S::Int, p::Int)
+compute_distances = function(dist::String, emp_dist_1::Function, emp_dist_2::Function, S::Int, p::Int)
     # this function is used for empirical distributions
     # returns S wasserstein distances and optimal coupling given atoms and associated weights
     # S: number of times we want to compute W.D.
