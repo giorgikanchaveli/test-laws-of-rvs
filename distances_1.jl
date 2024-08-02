@@ -9,7 +9,7 @@ using KernelFunctions
 include("distributions.jl")
 
 
-compute_cost = function(atoms1::Vector{Float64}, atoms2::Vector{Float64}, p::Int)
+function compute_cost(atoms1::Vector{Float64}, atoms2::Vector{Float64}, p::Int)
     # builds cost matrix for atoms. Returns a matrix c of size length(atoms1)*length(atoms2) 
     # where c[i,j] is p-euclidian distance between atoms[i] and atoms[j]
 
@@ -22,7 +22,7 @@ compute_cost = function(atoms1::Vector{Float64}, atoms2::Vector{Float64}, p::Int
     return c
 end
 
-compute_distance = function(dist::String, emp_dist_1::Function, emp_dist_2::Function, p::Int)
+function compute_distance(dist::String, emp_dist_1::Function, emp_dist_2::Function, p::Int)
     # this function is used for empirical distributions
     # if dist == wass returns wasserstein distance and optimal coupling given atoms and associated weights
     # if dist == mmd returns mmd distance
@@ -31,13 +31,10 @@ compute_distance = function(dist::String, emp_dist_1::Function, emp_dist_2::Func
     #emp_dist_i: function s.t. when we call it returns unique atoms and weights associated to it
     
     # simulate emp distributions
-    atoms_1 = emp_dist_1()
-    atoms_2 = emp_dist_2()
-
+    atoms_1, weights_1 = emp_dist_1()
+    atoms_2, weights_2 = emp_dist_2()
     #compute disatnce
     if dist == "wass"
-        atoms_1,weights_1 = convert_measure(atoms_1)
-        atoms_2,weights_2 = convert_measure(atoms_2)
         cost = compute_cost(atoms_1,atoms_2,p)
         gamma = ExactOptimalTransport.emd(weights_1, weights_2, cost, Tulip.Optimizer())
         return sum(cost.*gamma)
@@ -47,19 +44,27 @@ compute_distance = function(dist::String, emp_dist_1::Function, emp_dist_2::Func
     end
 end
 
-compute_distances = function(dist::String, emp_dist_1::Function, emp_dist_2::Function, S::Int, p::Int)
-    # this function is used for empirical distributions
-    # returns S wasserstein distances and optimal coupling given atoms and associated weights
-    # S: number of times we want to compute W.D.
-    # p is power for the associated p-euclidian distance
 
-    #emp_dist_i: function s.t. when we call it returns unique atoms and weights associated to it
-    d = []
-    for s in 1:S
-        push!(d,compute_distance(dist, emp_dist_1, emp_dist_2, p))
+
+
+function compute_distance(dist::String, pm_1::PM, pm_2::PM, n_rv::Vector{Int}, S::Int, p::Int)
+    # dist: distance used for prob. measures
+    # pm_i: probability measure
+    # n_rv: number of r.v. you want to simulate from each prob. measure
+    # S: number of times to compute distance
+
+    # for each n in n_rv computes S times the distance between prob measures
+    # returns length(n_rv)xS matrix
+    nrows = length(n_rv)
+    d = zeros(nrows,S)
+    for i in 1:nrows
+        for s in 1:S
+            d[i, s] = compute_distance(dist,() -> emp_distr(pm_1,n_rv[i]),()->emp_distr(pm_2,n_rv[i]), p)
+        end
     end
     return d
 end
+
 
 
 # distances_same,n_rejected_same = hyp_test_discrete(5,10000,50,0.05, true)

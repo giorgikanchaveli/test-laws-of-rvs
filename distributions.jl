@@ -14,7 +14,7 @@ struct Discr <: PM
     function Discr(n_atoms::Int)
         atoms = 2*rand(n_atoms).-1
         weights = rand(n_atoms)
-        weights = weights./sum(weights)
+        weights = weights ./ sum(weights)
         new(atoms, weights)
     end
 
@@ -37,6 +37,13 @@ struct Uniformrv<: PM
     b::Float64
 end
 
+struct Betarv<:PM
+    # Beta distribution on [0,1]
+    a::Float64
+    b::Float64
+end
+
+
 
 function Base.copy(d::Discr)
     return Discr(d.atoms, d.weights)
@@ -51,14 +58,40 @@ function convert_measure(atoms::Vector{Float64})
     weights = [counts[val]/n for val in uniq_atoms]
     return uniq_atoms, weights
 end
-
+function project_grid(x::Vector{Float64})
+    M = 500
+    Δ = 1/M
+    atoms = collect(0.0:Δ:1.0)
+    weights = zeros(M+1)
+    for i in 1:length(x)
+        l = floor(Int,x[i]/Δ+1)
+        if x[i] - (l-1)*Δ > Δ/2
+            j = l+1
+        else
+            j = l
+        end
+        weights[j]+=1
+    end
+    weights = weights ./ sum(weights)
+    return atoms, weights
+end
 
 function emp_distr(pm::Discr, n::Int)
     # returns the empirical distribution of discrete p.m., i.e. unique atoms and associated weights from
     # simulation
     dist = Categorical(pm.weights)
     x = pm.atoms[rand(dist,n)]
-    return x
+    return convert_measure(x)
+end
+
+function emp_distr(pm::Betarv, n)
+    dist = Beta(pm.a,pm.b)
+    x = rand(dist, n)
+    if n<=500
+        return x, fill(1/n,n)
+    else
+        return project_grid(x)
+    end
 end
 
 function emp_distr(pm::Gammarv, n::Int)
