@@ -1,13 +1,41 @@
 
-include("simulations.jl")
+
+# t = time()
+# n_rv = [100,1000,10000,100000,1000000]
+# S = 1 # 100000 shegvidzlia 5 saatshi
+# p_discr,h_discr = emp_thresh_prob_plot_hist("wass",discr_1,discr_2,n_rv,S)
+# time_diff = time()-t
+
+# plot_thresh_plot(p_discr)
+
+
+# t = time()
+# unif_1,unif_2 = Betarv(1.0,1.0), Betarv(1.0,1.0)
+# S = 000
+# p_unif,h_unif = emp_thresh_prob_plot_hist("wass",unif_1,unif_2,n_rv,S)
+# time_diff = time()-t
+
+
+
+
 
 
 # we check how well does empirical threshold work for hypothesis testing for discrete
-# measures with fixed number of atoms
+# measures with fixed number of atoms (15)
+
+# Random.seed!(1234)
+# t = time()
+# thresh,m,r,sames = check_emp_thresh(10000,1000,0.05)
+# time_diff = time()-t
+
+
+
+
 # start_time = time()
 # Random.seed!(1234)
 # n_atoms = 15
-# S = 5
+# S = 5m
+
 # n_rv = 10
 # discr_1 = Discr(n_atoms)
 # discr_2 = copy(discr_1)
@@ -36,18 +64,6 @@ include("simulations.jl")
 # measures,rejecteds = check_emp_threshold("wass",thresh, n_rv, S, M)
 
 
-# we check theoretical bound on the mean distance with n simulated r.v. for each p.m
-start_time = time()
-Random.seed!(1234)
-n_atoms = 15
-k = 2.0 # length of interval of sample space
-S = 1
-n_rv = [5,5,10,10,20,20,20,20]
-dist = "wass"
-discr_1 = Discr(n_atoms)
-discr_2 = Discr(n_atoms)
-distances = convergence_dist(dist,discr_1,discr_2,n_rv,S)
-bound = mean_bound(n_rv, k, 1)
 
 
 
@@ -58,8 +74,6 @@ bound = mean_bound(n_rv, k, 1)
 
 
 
-p_1,p_2 = Discr(15),Discr(15)
-d = compute_distance("wass",p_1,p_2,[10],10,1)
-
-p_1,p_2 = Betarv(1.0,1.0)
-d = compute_distance("wass",p_1,p_2,[10],10,1)
+# p_1,p_2 = Betarv(1.0,1.0), Betarv(1.0,1.0)
+# n_rv=[100]
+# c = 2*(thresh_bobkov(p_1,n_rv,0.05/2) + thresh_bobkov(p_1,n_rv,0.05/2))
